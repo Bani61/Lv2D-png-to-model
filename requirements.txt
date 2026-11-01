@@ -1,0 +1,6 @@
+numpy>=1.26
+opencv-python>=4.9
+Pillow>=10
+psd-tools>=1.10
+gradio_client>=1.0
+

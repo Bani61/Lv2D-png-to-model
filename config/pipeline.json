@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "active_profile": "auto",
+  "principles": [
+    "Remote high-resolution decomposition is preferred for final full-body art.",
+    "Never upload character art without user consent.",
+    "Never start local GPU inference automatically after installation.",
+    "Full-body rigging uses PSD2Live and must pass limb, ankle, sole, sleeve and garment ownership checks."
+  ],
+  "profiles": {
+    "cloud_only": {
+      "local_inference": false,
+      "batch_size": 1,
+      "resolution": 1536,
+      "steps": 30,
+      "cpu_offload": true,
+      "group_offload": false,
+      "target": "Hugging Face or ModelScope"
+    },
+    "low_vram_under_8gb": {
+      "local_inference": true,
+      "batch_size": 1,
+      "resolution": 768,
+      "steps": 15,
+      "cpu_offload": true,
+      "group_offload": false,
+      "requires_explicit_approval": true
+    },
+    "cautious_8gb": {
+      "local_inference": true,
+      "batch_size": 1,
+      "resolution": 1024,
+      "steps": 20,
+      "cpu_offload": true,
+      "group_offload": false,
+      "requires_explicit_approval": true,
+      "note": "The observed Windows 8 GB setup completes very slowly even at 1280/30; prefer cloud."
+    },
+    "balanced_10_12gb": {
+      "local_inference": true,
+      "batch_size": 1,
+      "resolution": 1280,
+      "steps": 24,
+      "cpu_offload": true,
+      "group_offload": true,
+      "requires_explicit_approval": true
+    },
+    "high_quality_12gb_plus": {
+      "local_inference": true,
+      "batch_size": 1,
+      "resolution": 1280,
+      "steps": 30,
+      "cpu_offload": false,
+      "group_offload": true,
+      "requires_explicit_approval": true
+    }
+  }
+}
+

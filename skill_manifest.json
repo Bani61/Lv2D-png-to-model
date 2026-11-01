@@ -1,0 +1,98 @@
+{
+  "name": "Lv2D-png-to-model",
+  "display_name": "Lv2D-png-to-model",
+  "internal_id": "lv2d-png-to-model",
+  "slug": "lv2d-png-to-model",
+  "version": "1.0.0",
+  "license": "Lv2D-png-to-model Non-Commercial License v1.0",
+  "description": "这是一个将单张 PNG/JPG 二次元立绘，通过 AI 自动拆层、生成 PSD，并引导绑定为 Live2D 模型的自动化技能包。支持 8GB 显存环境的自适应环境检查和依赖安装。",
+  "entry": "AI_README.md",
+  "skill_entry": "SKILL.md",
+  "inputs": [
+    "png",
+    "jpg",
+    "jpeg",
+    "psd"
+  ],
+  "outputs": [
+    "png",
+    "psd",
+    "cmo3",
+    "moc3",
+    "model3.json",
+    "physics3.json",
+    "motion3.json",
+    "vtube.json",
+    "psd2live"
+  ],
+  "python": {
+    "minimum": "3.10"
+  },
+  "installation": {
+    "check": "python check_env.py --json",
+    "install": "python install.py --yes",
+    "install_local_gpu": "python install.py --yes --with-local-gpu",
+    "verify": "python install.py --verify-only --json",
+    "install_skill_copy": "python install.py --yes --install-skill <empty-directory>"
+  },
+  "invocation": {
+    "unpack": "Extract the ZIP and enter the directory containing AI_README.md.",
+    "check": "python check_env.py --json",
+    "install": "python install.py --yes",
+    "optional_local_gpu": "python install.py --yes --with-local-gpu",
+    "verify": "python install.py --verify-only --json",
+    "read_first": [
+      "AI_README.md",
+      "skill_manifest.json",
+      "config/pipeline.json"
+    ]
+  },
+  "required_dependencies": {
+    "python": [
+      "numpy",
+      "opencv-python",
+      "Pillow",
+      "psd-tools",
+      "gradio_client"
+    ],
+    "system": [
+      "file read/write access",
+      "ZIP support"
+    ]
+  },
+  "optional_dependencies": {
+    "local_gpu": [
+      "torch",
+      "torchvision",
+      "diffusers",
+      "transformers==4.49.0",
+      "bitsandbytes",
+      "safetensors",
+      "accelerate",
+      "huggingface_hub"
+    ],
+    "vision": [
+      "onnxruntime"
+    ],
+    "system": [
+      "ffmpeg",
+      "PSD2Live",
+      "Live2D Cubism Editor",
+      "VTube Studio"
+    ]
+  },
+  "capabilities": [
+    "illustration variant preparation",
+    "automatic provisional image decomposition",
+    "See-through result normalization and PSD handling",
+    "half-body rig generation and VTube Studio installation",
+    "full-body PSD quality checklist and PSD2Live routing"
+  ],
+  "limitations": [
+    "The bundled rigkit builder is fully validated for half-body work; full-body binding requires PSD2Live.",
+    "No model weights are bundled.",
+    "The installer does not upload art or start inference.",
+    "Cubism Editor, PSD2Live and VTube Studio require their own licenses and installations."
+  ]
+}
+

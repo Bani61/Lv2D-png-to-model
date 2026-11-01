@@ -1,0 +1,7 @@
+interface:
+  display_name: "Lv2D-png-to-model"
+  short_description: "立绘自动拆层、PSD 生成与 Live2D 绑定安装包"
+  default_prompt: "Use $lv2d-png-to-model to inspect this PNG/JPG illustration, install the required environment, and prepare the Live2D production workflow."
+
+policy:
+  allow_implicit_invocation: true
