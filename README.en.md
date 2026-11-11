@@ -2,12 +2,15 @@
 
 An AI-oriented automation package that decomposes a single anime PNG/JPG illustration, produces layered PSD assets, and guides the workflow toward a bound Live2D model.
 
+Current version: `1.1.0`. See [CHANGELOG.md](CHANGELOG.md).
+
 ## Features
 
 - Checks Python, required packages, CUDA, VRAM, disk space and file permissions.
 - Selects a safe profile for low-VRAM, 8 GB, balanced or high-memory systems.
 - Provides illustration variants, See-through normalization, half-body rigging, previews and VTube Studio installation.
 - Routes full-body PSDs through PSD2Live for `.cmo3`, `.moc3`, `.model3.json` and `.vtube.json` output.
+- Validates `Original`, hat/hair ordering, and front-neck/back collar separation before binding.
 - Installation never uploads artwork or starts long-running inference.
 
 ## Quick installation
@@ -33,6 +36,8 @@ python src/run_pipeline.py doctor
 python src/run_pipeline.py split <asset-dir> <layer-output-dir> --pad-top 90
 python src/run_pipeline.py build <character.json>
 python src/run_pipeline.py vts <character.json> --install
+python scripts/make_tk_workflow.py --input-name hero.png --out hero-tk.json
+python scripts/occlusion_psd_check.py hero.psd --mode full --require-original --json
 ```
 
 Inspect a full-body PSD before opening it in PSD2Live:
@@ -40,6 +45,10 @@ Inspect a full-body PSD before opening it in PSD2Live:
 ```text
 python src/integrations/check_fullbody.py --psd <file.psd> --psd2live-root <path>
 ```
+
+See [references/occlusion-workflow.md](references/occlusion-workflow.md) for the
+occlusion-sensitive path and [references/project-landscape.md](references/project-landscape.md)
+for verified project versions and limitations.
 
 ## Resource profiles
 

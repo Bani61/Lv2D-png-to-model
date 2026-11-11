@@ -5,7 +5,9 @@
     "Remote high-resolution decomposition is preferred for final full-body art.",
     "Never upload character art without user consent.",
     "Never start local GPU inference automatically after installation.",
-    "Full-body rigging uses PSD2Live and must pass limb, ankle, sole, sleeve and garment ownership checks."
+    "Full-body rigging uses PSD2Live and must pass limb, ankle, sole, sleeve and garment ownership checks.",
+    "Occlusion-sensitive PSDs must pass Original and collar front/back ordering checks before binding.",
+    "tk_seethrough auto_fill repairs missing or low-similarity layers; it is not an occlusion-order judge."
   ],
   "profiles": {
     "cloud_only": {
@@ -56,4 +58,3 @@
     }
   }
 }
-

@@ -17,6 +17,14 @@ Install this package so an AI agent can:
 
 Do not upload character art. Do not start See-through, CUDA inference, PSD2Live, Cubism or VTube Studio automatically. Installation is allowed; production inference requires a later user-approved action.
 
+For occlusion-sensitive work, read `references/occlusion-workflow.md` and
+`references/project-landscape.md` before choosing a model. The verified routing is:
+
+- See-through or tk_seethrough for anime semantic decomposition.
+- PSD2Live `source_split_depth` for front/back layers around a neck or hair mesh.
+- tk_seethrough `auto_fill` only for missing or low-similarity layers, never for occlusion-order decisions.
+- CObL, RevealLayer and Qwen-Image-Layered only as optional research/comparison paths until tested on this workflow.
+
 ## Installation Protocol
 
 Run commands from the directory containing this file.
@@ -135,6 +143,21 @@ python src\run_pipeline.py estimate <asset-dir>\layers-st <character-dir> --name
 python src\run_pipeline.py prepare <character-dir>\character.json
 python src\run_pipeline.py build <character-dir>\character.json
 python src\run_pipeline.py vts <character-dir>\character.json --install
+```
+
+Build a tk_seethrough ComfyUI workflow without starting inference:
+
+```text
+python scripts\make_tk_workflow.py --input-name hero.png --out hero-tk.json
+```
+
+The generator defaults to `auto_fill=false`. Adding `--auto-fill` permits up to
+five diffusion runs and must be approved before submission.
+
+Validate a generated PSD:
+
+```text
+python scripts\occlusion_psd_check.py hero.psd --mode full --require-original --json
 ```
 
 Full-body sequence:

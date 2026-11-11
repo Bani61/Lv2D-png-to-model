@@ -3,11 +3,12 @@
   "display_name": "Lv2D-png-to-model",
   "internal_id": "lv2d-png-to-model",
   "slug": "lv2d-png-to-model",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "Lv2D-png-to-model Non-Commercial License v1.0",
-  "description": "这是一个将单张 PNG/JPG 二次元立绘，通过 AI 自动拆层、生成 PSD，并引导绑定为 Live2D 模型的自动化技能包。支持 8GB 显存环境的自适应环境检查和依赖安装。",
+  "description": "将单张 PNG/JPG 二次元立绘拆成可绑定的分层 PSD，检查帽子、衣领、头发、耳朵和脖子的遮挡顺序，并路由到 PSD2Live 或半身自动绑定流程。",
   "entry": "AI_README.md",
   "skill_entry": "SKILL.md",
+  "release_notes": "CHANGELOG.md",
   "inputs": [
     "png",
     "jpg",
@@ -85,14 +86,63 @@
     "illustration variant preparation",
     "automatic provisional image decomposition",
     "See-through result normalization and PSD handling",
+    "tk_seethrough workflow generation with opt-in auto-fill and Original base layer",
+    "PSD layer naming and front/back occlusion validation",
+    "PSD2Live front/back depth-split routing",
     "half-body rig generation and VTube Studio installation",
     "full-body PSD quality checklist and PSD2Live routing"
   ],
   "limitations": [
     "The bundled rigkit builder is fully validated for half-body work; full-body binding requires PSD2Live.",
+    "CObL is trained for multi-object tabletop scenes and is not yet a validated anime occlusion-order judge.",
+    "RevealLayer requires bounding boxes and a FLUX.1-dev environment; anime-part quality has not been validated.",
+    "Qwen-Image-Layered has about 20.4B BF16 parameters and is not a default 8 GB runtime.",
     "No model weights are bundled.",
     "The installer does not upload art or start inference.",
     "Cubism Editor, PSD2Live and VTube Studio require their own licenses and installations."
-  ]
+  ],
+  "scripts": {
+    "occlusion_check": "python scripts/occlusion_psd_check.py <psd> --mode full --require-original --json",
+    "make_tk_workflow": "python scripts/make_tk_workflow.py --input-name <image> --out <workflow.json>",
+    "occlusion_tests": "python -m unittest -v tests/test_occlusion_tools.py"
+  },
+  "verified_external_projects": {
+    "see_through": {
+      "repo": "https://github.com/shitagaki-lab/see-through",
+      "commit": "df019de5129d6c4b406587a14c3501669441a783",
+      "license": "Apache-2.0"
+    },
+    "comfyui_see_through": {
+      "repo": "https://github.com/jtydhr88/ComfyUI-See-through",
+      "commit": "98d754bf04f668647919ab750eccb0e0640faa81"
+    },
+    "tk_seethrough": {
+      "repo": "https://github.com/tackcrypto1031/tk_seethrough",
+      "commit": "265d7acbb82bd60198ff17714361426994114149",
+      "license": "MIT",
+      "status": "source_reviewed_not_installed_by_installer"
+    },
+    "psd2live": {
+      "repo": "https://github.com/tsunehimatoi/psd2live",
+      "commit": "f70241ff0ba2c50a992540ab4238e25a869aa33e",
+      "license": "GPL-3.0 application; selected modules MIT"
+    },
+    "cobl": {
+      "repo": "https://github.com/aneeldamaraju/cobl",
+      "commit": "c7ecec5264245b8be7d45c82d02e7a55d3dad075",
+      "license": "MIT",
+      "scope": "multi-object tabletop scenes"
+    },
+    "reveallayer": {
+      "repo": "https://github.com/360CVGroup/RevealLayer",
+      "commit": "da68ff58889a1799a1e75efd23e72bccebbf7589",
+      "license": "Apache-2.0"
+    },
+    "qwen_image_layered": {
+      "repo": "https://github.com/QwenLM/Qwen-Image-Layered",
+      "commit": "54c4fe47e76d745775e03fc66ee38457280ed9ea",
+      "license": "Apache-2.0"
+    }
+  }
 }
 

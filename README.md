@@ -2,12 +2,15 @@
 
 将单张 PNG/JPG 二次元立绘通过 AI 拆层、生成分层 PSD，并引导绑定为 Live2D 模型的自动化技能包。
 
+当前版本：`1.1.0`。版本变更见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 功能
 
 - 自动检查 Python、核心依赖、CUDA、显存、磁盘和文件权限。
 - 根据显卡情况选择低显存、8 GB 谨慎、均衡或高质量配置。
 - 提供立绘变体、See-through 拆层、PSD 组件整理、半身自动绑定、预览和 VTube Studio 安装代码。
 - 全身路线使用 See-through 生成 PSD，再通过 PSD2Live 生成 `.cmo3`、`.moc3`、`.model3.json` 和 `.vtube.json`。
+- 提供遮挡专项流程，检查帽子、衣领、头发、耳朵和脖子的前后关系。
 - 安装过程不会自动上传立绘，也不会自动启动耗时推理。
 
 ## 快速安装
@@ -42,6 +45,21 @@ python src/run_pipeline.py vts <character.json> --install
 ```text
 python src/integrations/check_fullbody.py --psd <file.psd> --psd2live-root <path>
 ```
+
+生成 tk_seethrough 的 ComfyUI API 工作流：
+
+```text
+python scripts/make_tk_workflow.py --input-name hero.png --out hero-tk.json
+```
+
+检查分层 PSD：
+
+```text
+python scripts/occlusion_psd_check.py hero.psd --mode full --require-original --json
+```
+
+遮挡项目的版本、许可和能力边界见 [项目核对](references/project-landscape.md)，
+执行步骤见 [遮挡工作流](references/occlusion-workflow.md)。
 
 ## 资源档位
 
