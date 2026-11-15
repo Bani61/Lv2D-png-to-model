@@ -37,6 +37,18 @@ not by reading code.
 
 ### Changed
 
+- `README.md` / `README.en.md` rewritten as a **product manual** for people who
+  make VTuber models (not for repo developers): feature table with per-feature
+  dependencies and status, system requirements with the five GPU profiles,
+  install, quick start, output file reference, workflow, VTS tuning, FAQ,
+  layout, license.
+- New **known-issues list** (8 items) replaces the previous roadmap phrasing:
+  Cubism 5.4 integration not started, closed-eye binding flawed, auto-split
+  mouth binds poorly, VTS default ranges too wide, re-export resets motions,
+  arms hidden behind the shirt, slow local CUDA on 8 GB, deformation beyond
+  ±20° head turn. Each row carries impact, status and a workaround.
+- The roadmap wording ("下一个目标") is gone; 5.4 appears only as issue #1 with
+  the facts that block it.
 - Distribution: from 1.4.0 on every version publishes a built
   `Lv2D-png-to-model-<version>.zip` on GitHub Releases. `README.md` /
   `README.en.md` gained an install section (download → extract → three commands,
