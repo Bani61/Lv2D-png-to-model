@@ -37,6 +37,10 @@ not by reading code.
 
 ### Changed
 
+- Distribution: from 1.4.0 on every version publishes a built
+  `Lv2D-png-to-model-<version>.zip` on GitHub Releases. `README.md` /
+  `README.en.md` gained an install section (download → extract → three commands,
+  optional `robocopy` into `%USERPROFILE%\.dsh\skills\lv2d-png-to-model`).
 - `README.md`/`README.en.md`: the human section is now **开发者必读 / Developer
   notes** — architecture line, three commands, smoke-test state table, binding,
   VTS install, five pitfalls as a symptom→cause→fix table, tuning, render-diff

@@ -14,6 +14,46 @@ Three entry points, pick by what you already have:
 Current version: `1.4.0`. See [CHANGELOG.md](CHANGELOG.md).
 Roadmap: [Next goal: Cubism 5.4 integration](#next-goal-cubism-54-integration).
 
+## Install (packaged downloads start at 1.4.0)
+
+**From 1.4.0 on, every version ships a built zip on
+[Releases](https://github.com/Bani61/Lv2D-png-to-model/releases).** No clone, no
+git required.
+
+### Steps
+
+1. Download `Lv2D-png-to-model-1.4.0.zip` from Releases;
+2. Extract it — you get `Lv2D-png-to-model\`;
+3. Inside that directory:
+
+```powershell
+python check_env.py --json                  # what is missing, is the GPU enough, can we write files
+python install.py --yes                     # required dependencies only
+python install.py --verify-only --json      # expects "ok": true
+powershell -ExecutionPolicy Bypass -File tests/smoke.ps1   # PASS / FAIL / SKIP
+```
+
+### Install as a DSH skill (auto-loaded by agents)
+
+Copy the extracted directory into the DSH skill folder, keeping the name
+`lv2d-png-to-model`:
+
+```powershell
+robocopy . "$env:USERPROFILE\.dsh\skills\lv2d-png-to-model" /E
+```
+
+DSH hot-loads it; no restart. **No registry writes, no PATH changes** — uninstall
+means deleting that directory.
+
+### Command-line only
+
+Skip the skill copy and run `python check_env.py` plus the scripts in `scripts/`
+from the extracted folder.
+
+> Versions before 1.4.0 have no release asset; they had to be cloned or taken as
+> a source zip.
+
+
 ---
 
 ## Developer notes

@@ -13,6 +13,40 @@
 当前版本：`1.4.0`。变更见 [CHANGELOG.md](CHANGELOG.md)。
 路线图见 [下一个目标：接入 Cubism 5.4](#下一个目标接入-cubism-54)。
 
+## 安装（从 1.4.0 开始提供安装包）
+
+**从 1.4.0 起，每个版本都在 [Releases](https://github.com/Bani61/Lv2D-png-to-model/releases) 提供打好的 zip 安装包**，不需要 clone 仓库，也不需要 git。
+
+### 装法
+
+1. 从 Releases 下载 `Lv2D-png-to-model-1.4.0.zip`；
+2. 解压，得到 `Lv2D-png-to-model\` 目录；
+3. 进入该目录，跑三条命令：
+
+```powershell
+python check_env.py --json                  # 自检：缺什么、显卡够不够、能不能写文件
+python install.py --yes                     # 装依赖（只装必需项）
+python install.py --verify-only --json      # 期望输出 "ok": true
+powershell -ExecutionPolicy Bypass -File tests/smoke.ps1   # 验收：PASS/FAIL/SKIP
+```
+
+### 想让 agent 自动加载（装成技能）
+
+把解压出来的目录整个复制到 DSH 的技能目录，目录名保持 `lv2d-png-to-model`：
+
+```powershell
+robocopy . "$env:USERPROFILE\.dsh\skills\lv2d-png-to-model" /E
+```
+
+DSH 会热加载，不用重启。**不写注册表、不改 PATH**，卸载就是删掉那个目录。
+
+### 只想当命令行工具用
+
+不用装技能，直接在解压目录里跑 `python check_env.py` 和 `scripts/` 下的脚本即可。
+
+> 1.4.0 之前的版本没有发布包，只能 `git clone` 或下载源码 zip。
+
+
 ---
 
 ## 开发者必读
