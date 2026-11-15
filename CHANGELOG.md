@@ -6,6 +6,13 @@ Runtime-proven release. Everything below was executed end to end on a real
 character (blue-hair hoodie, 765×1536 PSD) and verified by rendered images,
 not by reading code.
 
+### Changed — licensing
+
+- `LICENSE` is now the **PolyForm Noncommercial License 1.0.0**
+  (https://polyformproject.org/licenses/noncommercial/1.0.0), copyright
+  holder **Bani61**, carrying the `Required Notice:` line at the top so it
+  travels with every copy. `skill_manifest.json` reports the same license.
+
 ### Added
 
 - `references/psd2live-ops.md` — PSD2Live 3.6.7 MCP contract: 28 tools, the

@@ -1,7 +1,8 @@
 # Third-Party Notices
 
-The root non-commercial license applies only to original project material for
-which the publisher has the right to grant that license.
+The root PolyForm Noncommercial License 1.0.0 (copyright Bani61) applies only to
+original project material for which the publisher has the right to grant that
+license.
 
 ## Bundled rigkit source
 

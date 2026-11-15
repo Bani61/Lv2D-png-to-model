@@ -223,7 +223,7 @@ PSD 里对应的嘴层或眼层被隐藏，或名字不符合约定。PSD2Live �
 
 ## 十一、许可
 
-本项目采用禁止商用许可证，详见 [LICENSE](LICENSE)。第三方代码与依赖保留各自原许可证，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。PSD2Live 本体为 GPL-3.0，不随本仓库分发，需自行安装。
+本项目采用 **PolyForm Noncommercial License 1.0.0**（禁止商业用途），著作权人 **Bani61**，全文见 [LICENSE](LICENSE)。第三方代码与依赖保留各自原许可证，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。PSD2Live 本体为 GPL-3.0，不随本仓库分发，需自行安装。
 
 ---
 

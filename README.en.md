@@ -222,7 +222,8 @@ tests/smoke.ps1         smoke test
 
 ## 11. License
 
-Non-commercial license — [LICENSE](LICENSE). Third-party components keep their own
+**PolyForm Noncommercial License 1.0.0** — noncommercial use only.
+Copyright holder: **Bani61**. Full text: [LICENSE](LICENSE). Third-party components keep their own
 licenses — [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). PSD2Live itself is
 GPL-3.0 and is not distributed here.
 

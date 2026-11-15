@@ -4,7 +4,7 @@
   "internal_id": "lv2d-png-to-model",
   "slug": "lv2d-png-to-model",
   "version": "1.4.0",
-  "license": "Lv2D-png-to-model Non-Commercial License v1.0",
+  "license": "PolyForm Noncommercial 1.0.0",
   "description": "把单张 PNG/JPG 立绘或已分层 PSD 变成可在 VTube Studio 使用的 Live2D 模型：拆层、检查遮挡顺序、路由到 PSD2Live 或半身绑定、通过 MCP 修正绑定缺陷并用渲染图验收。",
   "entry": "AI_README.md",
   "skill_entry": "SKILL.md",
@@ -188,5 +188,6 @@
       "commit": "54c4fe47e76d745775e03fc66ee38457280ed9ea",
       "license": "Apache-2.0"
     }
-  }
+  },
+  "copyright": "Bani61"
 }
