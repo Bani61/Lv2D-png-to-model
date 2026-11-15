@@ -37,6 +37,14 @@ not by reading code.
 
 ### Changed
 
+- `README.md`/`README.en.md`: the human section is now **开发者必读 / Developer
+  notes** — architecture line, three commands, smoke-test state table, binding,
+  VTS install, five pitfalls as a symptom→cause→fix table, tuning, render-diff
+  verification rule, Cubism caveats, limits, requirements.
+- `README.md`/`README.en.md`: new roadmap section **下一个目标：接入 Cubism 5.4**
+  — why the API matters, the three verified facts that block it today (alpha
+  ended 2026-10-18 23:59 JST and is time-locked; 5.3.00 still latest), a
+  6-step adoption checklist, four cautions and a definition of done.
 - `README.md` rewritten for humans: three entry points, 30-second start,
   the VTube Studio "auto-configure / 15 default parameters" dialog explained,
   five pitfalls that cost the most time, and an explicit "what this cannot do".

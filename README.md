@@ -11,97 +11,197 @@
 | 想做半身、要精修绑定 | 内置 `rigkit` 半身流水线 | 网格 + 变形器 + VTS 包 |
 
 当前版本：`1.4.0`。变更见 [CHANGELOG.md](CHANGELOG.md)。
+路线图见 [下一个目标：接入 Cubism 5.4](#下一个目标接入-cubism-54)。
 
 ---
 
-## 第一部分 · 给人类
+## 开发者必读
 
-### 它是什么
+这一节是给你（改这个仓库、或拿它做生产的人）的。按顺序看，不要跳。
 
-一个把所有"手工在 Cubism Editor 里拖点"的工作自动化的工具包。核心是 **PSD2Live**：喂给它一个分层 PSD，它自动生成网格、变形器、参数键值、物理摆动，导出能在 VTube Studio 里直接加载的 `.moc3`。
+### 0. 一句话架构
 
-这个仓库包含了三样东西：
+```
+立绘 PNG ──See-through──▶ 分层 PSD ──PSD2Live──▶ moc3 + cmo3 ──▶ VTube Studio
+                                        ▲
+                                        └── MCP 接口：程序化改层序/键值/导出
+```
 
-1. **环境自检与安装**（`check_env.py` / `install.py`）——按你的显卡自动选档位，不装多余的东西；
-2. **半身 rigkit**（`src/rigkit`）——纯代码的半身自动绑定，适合做小角度转头的皮套；
-3. **PSD2Live 自动化层**（`scripts/psd2live_mcp.py` + `workflows/`）——通过 MCP 接口程序化地改图层、改绘制顺序、改关键帧、导出，不用手点菜单。
+**PSD2Live 是核心，不是可选件。** 它负责把"分层图"变成"会动的模型"——网格、变形器、参数、物理、动作，全是它生成的。这个仓库负责的是：装环境、检查图层、通过 MCP 修正它做错的地方、渲染验收、打包交付。
 
-### 30 秒上手（全身，最常用）
+### 1. 三步跑通
 
 ```powershell
-# 1. 自检
+# 第一步：自检（会告诉你缺什么、显卡够不够、能不能写文件）
 python check_env.py --json
 
-# 2. 装依赖（只装必需项，几百 MB）
+# 第二步：装依赖（只装必需项；不需要 CUDA 就走 cloud_only 档）
 python install.py --yes
-python install.py --verify-only --json      # 期望 "ok": true
+python install.py --verify-only --json        # 期望 "ok": true
 
-# 3. 把 PSD 直接丢给 PSD2Live 命令行
-PSD2Live.exe --input v0.1.psd --output out --lang zh --atlas 8192 --mesh-spacing 32
+# 第三步：跑冒烟测试（这一条能提前发现 90% 的环境问题）
+powershell -ExecutionPolicy Bypass -File tests/smoke.ps1
 ```
 
-产物：
+冒烟测试输出 `PASS / FAIL / SKIP` 三态：
+
+| 状态 | 含义 | 要不要管 |
+| --- | --- | --- |
+| PASS | 该组件可用 | 不用 |
+| SKIP | 组件不存在或版本不够（如 Cubism 5.3 无外部 API） | 看你需不需要那功能 |
+| FAIL | 必需项坏了 | 必须修，脚本会退出 1 |
+
+### 2. 绑一个模型
+
+```powershell
+PSD2Live.exe --input character.psd --output out --lang zh --atlas 8192 --mesh-spacing 32
+```
+
+两个参数不是随便写的：
+
+- `--atlas 8192`：默认 4096 在脸上会出现**矩形接缝**，8192 就没有了；
+- `--mesh-spacing 32`：默认 64 的网格太粗，嘴和眼睛的形变会走样。
+
+产物里你要用到的：
 
 ```
-out\v0.1.moc3            ← VTube Studio 用这个
-out\v0.1.model3.json     ← 配置清单（Moc / Textures / Motions / Physics）
-out\v0.1.physics3.json   ← 头发、挂件摆动
-out\v0.1.cmo3            ← 想精修时在 Cubism Editor 打开
-out\v0.1.4096\texture_00..0N.png
-out\v0.1.idle|nod|shake|blink.motion3.json
-out\v0.1.smile|sad|angry|surprised.exp3.json
+out\character.moc3            ← VTS 加载这个
+out\character.model3.json     ← 配置清单
+out\character.physics3.json   ← 物理摆动
+out\character.cmo3            ← 想精修时在 Cubism 打开
+out\character.4096\texture_00..0N.png
+out\character.idle|nod|shake|blink.motion3.json
 ```
 
-装进 VTS：把整个 `out` 文件夹复制到
+### 3. 装进 VTube Studio
+
+把整个 `out` 目录复制到：
 
 ```
 <Steam>\steamapps\common\VTube Studio\VTube Studio_Data\StreamingAssets\Live2DModels\<模型名>\
 ```
 
-然后 VTS 里点模型图标加载。**首次加载会弹「为模型进行自动配置？」→ 点「自动配置」→ 再弹「创建 15 个默认 VTS 参数」→ 点「确定」**，这是正常流程，不是报错。
+VTS 里加载后**会连着弹两个框**：
 
-### 几个必须知道的坑
+1. 「为模型进行自动配置？」→ 点「自动配置」
+2. 「创建 15 个基于 Live2D 默认参数名和值的 VTS 参数」→ 点「确定」
 
-1. **图层名字决定一切。** PSD2Live 靠名字认职责：`Hair_Back`、`Eye_White_L`、`Iris_R`、`Arm_L`、`Topwear_Body`、`张嘴`…… 名字不对或图层隐藏，那个部件就不会生成。最典型：`嘴张开` 图层是隐藏的 → 模型张不开嘴。
-2. **默认参数太猛。** 首次自动生成后，VTS 的 `Mouth Open` 上限是 **2.1**、`Eye Open` 是 **1.9**（输入只有 0..1），所以嘴一动就全开、眨眼一跳一跳。改法见下面"调参"。
-3. **导出会重置动作。** 每次重新导出，`idle` / `blink` 都会回到默认版本，自己调过的要备份再覆盖回去。
-4. **手臂默认被衣服盖住。** 你的 PSD 里 `Arm_L/R` 在 `Topwear_Body` 下面就是会被盖住。要改是改绘制顺序，不是改绑定。
-5. **美术本身的问题它救不了。** 比如一个只有 14 px 的嘴，被形变拉大后描边会扯成尖角。得换一张画对的图。
+**这是正常流程，不是文件坏了、不是参数丢失。** 它做的事是把模型的 Live2D 参数映射到 VTS 的内部参数。跳过也能用，但热键和面捕会缺一部分。
 
-### 调参（VTS 侧）
+### 4. 五个会让你白干一晚的坑
+
+| 坑 | 症状 | 根因 | 怎么修 |
+| --- | --- | --- | --- |
+| 图层名不对 / 图层被隐藏 | 模型张不开嘴、眼睛不眨 | PSD2Live 按名字认职责 | 改名成约定名 + 取消隐藏，重新导出 |
+| VTS 默认参数太猛 | 嘴一张就全开、眨眼一跳一跳 | `Mouth Open` 上限 2.1、`Eye Open` 1.9 | 改 `vtube.json`（见下节） |
+| 重新导出覆盖动作 | 调好的 idle/blink 没了 | 导出会重新生成动作 | 备份 `.motion3.json`，导出后覆盖回去 |
+| 手臂被衣服盖住 | 袖子看不见 | PSD 里 `Arm_L/R` 的绘制顺序在下 | 改 `draw_order`，不是改绑定 |
+| 美术本身有问题 | 嘴边缘有尖角、拉丝 | 比如嘴图只有 14 px | 换一张画对的图，改网格无解 |
+
+### 5. 调参（VTS 侧）
 
 配置文件：`Live2DModels\<模型名>\<模型名>.vtube.json`
 
 ```jsonc
 "ParameterSettings": [
-  { "Input": "MouthOpen", "OutputRangeLower": 0, "OutputRangeUpper": 0.85 },  // 默认 2.1
-  { "Input": "EyeOpenLeft",  "OutputRangeUpper": 1.0 },                       // 默认 1.9
+  { "Input": "MouthOpen",    "OutputRangeLower": 0, "OutputRangeUpper": 0.85 }, // 默认 2.1
+  { "Input": "EyeOpenLeft",  "OutputRangeUpper": 1.0 },                        // 默认 1.9
   { "Input": "EyeOpenRight", "OutputRangeUpper": 1.0 }
 ]
 ```
 
-**改之前必须先退出 VTS**（它会把自己内存里的设置写回这个文件）。改完再启动。
+**改之前必须先退出 VTS**——它退出时会把自己内存里的设置写回这个文件，你在运行中改的会被覆盖。
 
-### 精修（Cubism 侧）
+### 6. 判断"改完了没有"
 
-`xxx.cmo3` 可以直接在 Live2D Cubism Editor 里打开，参数和键值都在。注意：
+改完必须渲染，不能靠"命令返回成功"下结论：
 
-- 打开的是 `.cmo3`，**不要**走"新建 / 导入 PSD"，那样会得到一个只有空壳变形器的工程；
-- 文件要和旁边的 `xxx.4096\` 贴图目录待在一起，单独拿出 `.cmo3` 会丢贴图。
+```powershell
+python scripts/psd2live_mcp.py render --out mouth.png --params ParamMouthOpenY=1.0
+python scripts/psd2live_mcp.py render --out eyes.png  --params ParamEyeLOpen=0 ParamEyeROpen=0
+```
 
-### 它做不到什么
+如果新渲染图和上一张的 **sha256 完全一样**，说明你那步改动根本没生效——这个仓库里好几个"看起来有道理的修法"就是这么被否掉的。
 
-- 不能替你画画。分层 PSD 里缺的层、画错的位置，它只会按你给的东西去绑。
-- 不能保证绑定质量。8 方向转头超出 ±20° 后，自动绑定的脸会开始变形。
-- 不能导出 Cubism 的运行时文件（那步只能在 Editor 里手点，或直接用 PSD2Live 的导出）。
+### 7. 精修（Cubism 侧）
 
-### 需要什么
+`.cmo3` 可以直接在 Cubism Editor 打开，参数和键值都在。注意两点：
+
+- 打开 `.cmo3`，**不要**走「新建 / 导入 PSD」——那会得到只有空壳变形器的工程；
+- `.cmo3` 必须和旁边的 `<名字>.4096\` 贴图目录待在一起，单独拿出来会丢贴图。
+
+### 8. 能力边界
+
+- **不画画**：缺层、画错位置，它只会照着你给的东西绑；
+- **不保证绑定质量**：8 方向转头超过 ±20° 后，自动绑定的脸会开始变形；
+- **不替代 Cubism 精修**：需要手绘级别的细节时，还是要进 Editor；
+- **5.3 及以下连不上**：Cubism 的外部 API 只有 5.4+ 才有。
+
+### 9. 环境要求
 
 - Windows 10/11
 - Python ≥ 3.10
-- 分层 PSD（765×1536 之类的整幅画布，图层名按上面的约定）
+- 分层 PSD（整幅画布，图层名按约定）
 - PSD2Live 3.6.x（不随仓库分发）
 - 可选：Live2D Cubism Editor（精修）、VTube Studio（直播）
+
+---
+
+## 下一个目标：接入 Cubism 5.4
+
+**当前状态：等待版发布（BLOCKED，不是放弃）。**
+
+### 为什么要接
+
+现在这条流水线能"生成"模型，但**改不了 Cubism 里的东西**——改一个键值、挪一个部件，都得靠人工点菜单。接入 5.4 的外部应用程序集成 API 之后，这些变成代码可控：
+
+| 动作 | 现在 | 接入后 |
+| --- | --- | --- |
+| 读参数 / 部件树 / 变形器树 | 靠渲染图反推 | 直接读结构 |
+| 改参数范围、加减键值 | 只能通过 PSD2Live 工程 | `EditParameter` / `AddParameterKey` |
+| 改网格顶点、重排部件 | 做不到 | `EditArtMesh` / `MoveObjectOnPartsPalette` |
+| 批量改动 | 一次一类、反复导出 | `cubism_edit_batch` |
+| 导出运行时文件 | GUI 菜单 | **不在 API 内**（仍要手动或走 PSD2Live） |
+
+### 为什么现在做不了
+
+查证过的三个事实：
+
+1. Cubism 的外部应用程序集成 API 只存在于 **5.4 alpha**，本机是 5.3.02，`ws://localhost:22033` 端口不存在；
+2. 官方公告：**alpha 版本的提供与下载已于日本时间 2026 年 10 月 18 日 23:59 结束**，且 alpha 本身带时间锁，超期后即使有安装包也无法运行；
+3. 官网更新页目前最新仍是 **5.3.00**，没有 5.4 beta、没有 5.4 正式版。
+
+所以这一项目前无法推进，不是缺技术方案，是缺一个能跑的版本。
+
+### 接入条件（等版发布后照这个顺序做）
+
+```text
+① 装 Cubism 5.4+（可与 5.3 并存安装，不影响现有工程）
+② 打开模型 → 文件 → 外部应用程序集成的设置 → 勾「使用」
+   （要改数据，还要再勾「编辑」）
+③ 验证端口：Test-NetConnection 127.0.0.1 -Port 22033
+④ pip install cubism-mcp   （42 个工具，MIT，python ≥ 3.10）
+⑤ 冒烟测试 S5 应从 SKIP 变 PASS
+⑥ 拿现有模型的**副本**做第一次真编辑，不要动成品
+```
+
+### 接入时要注意的四件事
+
+1. **每次编辑会锁住 Editor 并弹确认框**，用户可以点取消，Editor 会用历史记录回滚——调用方必须能处理"被取消"这个分支；
+2. **API 是 alpha 级**，字段和行为可能变，别把它的返回结构写死；
+3. **没有渲染反馈**，改完仍然要靠截图或渲染图核对（这条规则不会因为接了 API 而取消）；
+4. **导出运行时文件、物理/动作曲线、材质混合不在 API 范围**——这三块仍然要手动或走 PSD2Live。
+
+### 判断标准
+
+接完算成功，要同时满足：
+
+- `tests/smoke.ps1` 的 S5 为 **PASS**（不是 SKIP）；
+- 能读回参数表并与原工程一致；
+- 能做一次"改一个键值 → 渲染 → 差值符合预期"的闭环；
+- 被用户取消时能正确回滚且不损坏工程。
+
+在此之前，`SKILL.md` 里的 L3 能力（Cubism 程序化编辑）保持"需要 5.4+"的标注，冒烟测试保持 SKIP 而不是 FAIL。
 
 ---
 
@@ -127,14 +227,14 @@ out\v0.1.smile|sad|angry|surprised.exp3.json
 ```
 ├─ SKILL.md                  技能入口（agent）
 ├─ AI_README.md              安装与执行协议（agent）
-├─ README.md                 本文件（人类）
+├─ README.md                 本文件（开发者必读 + agent 索引）
 ├─ check_env.py              环境自检
 ├─ install.py                依赖安装
 ├─ config/pipeline.json      资源档位
 ├─ src/rigkit/               半身绑定引擎
 ├─ src/integrations/         全身预检
 ├─ scripts/
-│   ├─ psd2live_mcp.py       ★ PSD2Live MCP 客户端（新增）
+│   ├─ psd2live_mcp.py       ★ PSD2Live MCP 客户端
 │   ├─ make_tk_workflow.py   ComfyUI 工作流生成
 │   └─ occlusion_psd_check.py PSD 结构检查
 ├─ workflows/
