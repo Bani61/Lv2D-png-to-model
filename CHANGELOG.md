@@ -6,6 +6,23 @@ Runtime-proven release. Everything below was executed end to end on a real
 character (blue-hair hoodie, 765×1536 PSD) and verified by rendered images,
 not by reading code.
 
+### Changed — layer manifest
+
+- `references/图层清单.md` rewritten around **split granularity**:
+  - eyes must ship `Eye_Lid_Upper_L/R` and `Eye_Lid_Lower_L/R` (eyelid skin
+    blocks) — closing an eye by shrinking the eyeball is what leaves the white
+    sliver;
+  - mouth must ship `Mouth_Teeth_Upper`, `Mouth_Teeth_Lower`, `Mouth_Lip_Upper`,
+    `Mouth_Lip_Lower`, `Mouth_Inner`, plus `Mouth_Skin_Upper` /
+    `Mouth_Skin_Lower` skin blocks;
+  - `Hair_Ahoge` (呆毛) must be its own layer.
+- New section **"机器能拆到哪一步"** marks which of those layers automatic
+  decomposition cannot produce (ahoge, teeth, lips, cavity, eyelid and
+  mouth-corner skin) so the gap is reported to a human instead of silently
+  shipped.
+- `AI_README.md` gains §6b: the five machine-impossible layer groups and the
+  wording to use when telling the user.
+
 ### Changed — licensing
 
 - `LICENSE` is now the **PolyForm Noncommercial License 1.0.0**

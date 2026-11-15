@@ -121,7 +121,9 @@ out\character.smile|sad|angry|surprised.exp3.json
 ## 六、使用流程
 
 ```
-① 准备分层 PSD      图层名按约定（见 references/图层清单.md）
+① 准备分层 PSD      图层名与拆分粒度按约定（见 references/图层清单.md）
+                    ※ 呆毛、上下牙、上下唇、口腔内部、眼里/嘴周的皮肤块，
+                      机器拆不出来，必须人工拆 —— 缺了模型就带对应缺陷
 ② 环境自检           python check_env.py --json
 ③ 绑定               PSD2Live.exe --input ... --output ...
 ④ 渲染验收           看张嘴、闭眼、±20° 转头是否正常

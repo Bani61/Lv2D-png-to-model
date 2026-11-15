@@ -157,6 +157,23 @@ A model delivery is complete when:
 - `model3.json` references resolve (`Moc`, `Textures`, `Physics`, `Motions`, `Expressions`);
 - a previous version remains on disk untouched.
 
+## 6b. Layers a machine cannot split — tell the human, do not attempt
+
+`references/图层清单.md` defines the required split granularity. Five groups of
+layers **cannot be produced by automatic decomposition** and must be split by a
+human before rigging. When a PSD lacks them, state the gap and ask; do not
+silently rig a model that will carry the defect.
+
+| Layer group | Why automation fails | Defect if missing |
+| --- | --- | --- |
+| `Hair_Ahoge` (呆毛 / single strand) | 2–5 px wide; merged into the bang or the background; the hair it covers is not repainted | no ahoge motion, or a stray line that sticks to the head |
+| `Mouth_Teeth_Upper` / `Mouth_Teeth_Lower` | tiny interior colour patches; teeth and mouth cavity come back fused | all deformation lands on one outline → torn mouth edges |
+| `Mouth_Lip_Upper` / `Mouth_Lip_Lower` / `Mouth_Inner` | same reason; interior is usually transparent or merged | mouth cannot open convincingly; corners tear |
+| `Mouth_Skin_Upper` / `Mouth_Skin_Lower` | merged into `Face_Skin` | the lip reveals background when it moves |
+| `Eye_Lid_Upper_L/R` / `Eye_Lid_Lower_L/R` | merged into `Face_Skin` | closed eyes show white / blue sliver under the lid |
+
+Message to use when reporting the gap: "拆层里缺 X 层，自动拆分做不出来（原因：Y），需要你在 PS 里补，否则会看到 Z。"
+
 ## 7. Known failure signatures
 
 Do not re-derive these; they are already diagnosed.
