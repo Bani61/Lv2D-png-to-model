@@ -1,140 +1,88 @@
-[SYSTEM INSTRUCTION: You are an AI agent tasked with installing this skill. Read this file carefully, run the checks, and install dependencies automatically.]
+[SYSTEM INSTRUCTION: You are an AI agent operating this skill. This file is the machine-facing protocol. The human-facing overview lives in README.md; do not confuse the two audiences.]
 
-# Lv2D-png-to-model AI Installation Guide
+# Lv2D-png-to-model — Agent Operating Protocol
 
 Display name: `Lv2D-png-to-model`
+Internal skill ID: `lv2d-png-to-model`
+Version: `1.4.0`
 
-Internal Skill ID: `lv2d-png-to-model` (the platform requires lowercase skill IDs).
+## 0. Read order
 
-## Outcome
+1. This file (installation + execution contract).
+2. `SKILL.md` (task routing, capability ladder, safety gates).
+3. `workflows/skill-routing.md` when the user's request could belong to another Live2D skill.
+4. `workflows/psd2live-mcp.md` when the task involves rigging, draw order, keyforms or export.
+5. `references/model-defects.md` when the user reports a visual defect.
 
-Install this package so an AI agent can:
+## 1. Outcome
+
+After installation an agent can:
 
 - inspect a PNG/JPG illustration and prepare Live2D variants;
 - decompose or normalize a layered PSD;
-- use the bundled `rigkit` half-body pipeline for mesh, deformation, preview and VTube Studio installation;
-- route full-body work through PSD2Live for `.cmo3`, `.moc3`, `.model3.json` and `.vtube.json` output.
+- run the bundled `rigkit` half-body pipeline (mesh, deformation, preview, VTS install);
+- drive **PSD2Live** through its MCP server to rig, reorder layers, edit keyforms and export `.cmo3` / `.moc3` / `.model3.json` / `.physics3.json`;
+- verify results by rendering the model to PNG instead of guessing.
 
-Do not upload character art. Do not start See-through, CUDA inference, PSD2Live, Cubism or VTube Studio automatically. Installation is allowed; production inference requires a later user-approved action.
+Hard rules inherited from the human README: do not upload character art, do not start See-through / CUDA inference / PSD2Live / Cubism / VTube Studio automatically, do not silently overwrite a previous model version.
 
-For occlusion-sensitive work, read `references/occlusion-workflow.md` and
-`references/project-landscape.md` before choosing a model. The verified routing is:
+## 2. Installation protocol
 
-- See-through or tk_seethrough for anime semantic decomposition.
-- PSD2Live `source_split_depth` for front/back layers around a neck or hair mesh.
-- tk_seethrough `auto_fill` only for missing or low-similarity layers, never for occlusion-order decisions.
-- CObL, RevealLayer and Qwen-Image-Layered only as optional research/comparison paths until tested on this workflow.
-
-## Installation Protocol
-
-Run commands from the directory containing this file.
-
-1. Inspect the machine:
+Run from the package root.
 
 ```text
 python check_env.py --json
-```
-
-Parse `summary.status`, `summary.missing_required`, `gpu`, `permissions`, `disk`, and `recommended_profile`.
-
-2. If Python is older than 3.10, stop and request a supported Python.
-
-3. Install required Python dependencies:
-
-```text
 python install.py --yes
+python install.py --verify-only --json
 ```
 
-The installer runs `pip install -r requirements.txt`, verifies source imports, and writes the detected profile to `config/pipeline.json`.
+Success = exit code 0 and `"ok": true` in the JSON.
 
-4. Install optional local CUDA support only when the user wants local See-through:
+Optional local CUDA decomposition:
 
 ```text
 python install.py --yes --with-local-gpu
 ```
 
-This is a large PyTorch/diffusers download. It does not download See-through model weights and does not run inference.
-
-5. Verify:
-
-```text
-python install.py --verify-only --json
-python check_env.py
-```
-
-Success means `install.py` returns exit code 0 and JSON contains `"ok": true`.
-
-6. Optional Skill copy: if the host expects a Skill directory and the user permits a write outside this package, install into a new empty directory:
+Optional skill copy into an empty host skill directory:
 
 ```text
 python install.py --yes --install-skill <empty-skill-directory>
 ```
 
-Never overwrite an existing Skill directory.
+Never overwrite an existing skill directory.
 
-## Dependency Tree
+### Environment facts observed on real machines
 
-Required, installed by `requirements.txt`:
+- `check_env.py` performs a write probe (`_permission_check`, check_env.py:175). Under a restricted sandbox it can spin at 100% CPU with no output. Run it with write access, or expect the hang.
+- PyPI direct access is unreliable from mainland China; `pip install -i https://pypi.tuna.tsinghua.edu.cn/simple` succeeded where the default index reset mid-download.
+- A non-ASCII install path (e.g. `F:\半白bani_\dsh-lv2D`) breaks Python argv when a shell passes it through. Install to a pure-ASCII path such as `C:\Users\<user>\.dsh\skills\lv2d-png-to-model`.
 
-```text
-Python >= 3.10
-├─ numpy
-├─ opencv-python
-├─ Pillow
-├─ psd-tools
-└─ gradio_client
-```
+## 3. Dependency tree
 
-Optional local GPU profile, installed only with `--with-local-gpu`:
+Required (`requirements.txt`): numpy, opencv-python, Pillow, psd-tools, gradio_client.
 
-```text
-CUDA-capable NVIDIA GPU
-├─ torch
-├─ torchvision
-├─ diffusers
-├─ transformers==4.49.0
-├─ bitsandbytes
-├─ safetensors
-├─ accelerate
-└─ huggingface_hub
-```
+Optional GPU (`--with-local-gpu`): torch, torchvision, diffusers, transformers==4.49.0, bitsandbytes, safetensors, accelerate, huggingface_hub.
 
-Optional vision/runtime packages:
+Optional runtime: onnxruntime.
 
-```text
-requirements-optional.txt
-└─ onnxruntime
-```
+Not bundled, must exist on the machine: ComfyUI-See-through + weights, PSD2Live portable build, Live2D Cubism Editor + Cubism Core, VTube Studio, ffmpeg.
 
-External applications and assets are not bundled:
+## 4. Resource decision rules
 
-- ComfyUI-See-through and LayerDiff/Marigold weights.
-- PSD2Live Windows portable release.
-- Live2D Cubism Editor and Cubism Core.
-- VTube Studio.
-- ffmpeg, only for preview clips.
-- Hugging Face or ModelScope tokens, only if the user chooses remote decomposition.
+| Condition | Profile |
+| --- | --- |
+| no CUDA / no torch | `cloud_only` |
+| GPU < 8 GB class | `low_vram_under_8gb` (768 px, 15 steps) |
+| 8–10 GB | `cautious_8gb` (1024 px, 20 steps) |
+| 10–12 GB | `balanced_10_12gb` |
+| ≥ 12 GB | `high_quality_12gb_plus` |
 
-## Resource Decision Rules
+Measured: RTX 5060 Laptop 8 GB with NF4 at 1280/30 entered inference but did not finish in 50 minutes. Prefer HF 1280 or ModelScope 1536 for final full-body decomposition.
 
-- No CUDA/torch: use the `cloud_only` profile.
-- GPU below the 8 GB product class: use `low_vram_under_8gb`; batch size 1, 768 resolution, 15 steps.
-- 8-10 GB GPU class: use `cautious_8gb`; batch size 1, 1024 resolution, 20 steps, no group offload by default.
-- 10-12 GB GPU: use `balanced_10_12gb`.
-- 12 GB or more: use `high_quality_12gb_plus`.
+## 5. Execution paths
 
-For the known Windows RTX 5060 8 GB setup, local NF4 at 1280/30 entered inference but did not finish after 50 minutes. Prefer Hugging Face 1280 or ModelScope 1536 for final full-body decomposition.
-
-## Source Commands
-
-Set `PYTHONPATH` to this package's `src` directory. On PowerShell:
-
-```powershell
-$env:PYTHONPATH = (Resolve-Path .\src).Path
-python src\run_pipeline.py doctor
-```
-
-Half-body sequence:
+### 5.1 Half-body (`rigkit`)
 
 ```text
 python src\run_pipeline.py variants <asset-dir> A0-base
@@ -145,38 +93,87 @@ python src\run_pipeline.py build <character-dir>\character.json
 python src\run_pipeline.py vts <character-dir>\character.json --install
 ```
 
-Build a tk_seethrough ComfyUI workflow without starting inference:
+Set `PYTHONPATH` to this package's `src` first.
+
+### 5.2 Full-body (`PSD2Live`)
+
+CLI (no GUI, one shot):
 
 ```text
-python scripts\make_tk_workflow.py --input-name hero.png --out hero-tk.json
+PSD2Live.exe --input model.psd --output out --lang zh --atlas 8192 --mesh-spacing 32
 ```
 
-The generator defaults to `auto_fill=false`. Adding `--auto-fill` permits up to
-five diffusion runs and must be approved before submission.
-
-Validate a generated PSD:
+MCP (when you need to fix what the automation got wrong):
 
 ```text
-python scripts\occlusion_psd_check.py hero.psd --mode full --require-original --json
+# 1. start the GUI app; it serves MCP on http://127.0.0.1:23871/mcp
+PSD2Live.exe
+
+# 2. token: Settings -> MCP -> 访问令牌, or read it from the registry
+#    HKCU\Software\JavaSoft\Prefs\io\github\psd2live\agent
+#    agent_mcp_bearer_token -> strip every '/' (Java prefs encoding)
+
+# 3. drive it
+python scripts\psd2live_mcp.py list
+python scripts\psd2live_mcp.py inspect --scope objects --query Mouth
+python scripts\psd2live_mcp.py render --out check.png --params '{"ParamMouthOpenY":1.0}'
 ```
 
-Full-body sequence:
+Full command reference: `workflows/psd2live-mcp.md`.
+Operation schema cheatsheet: `references/psd2live-ops.md`.
 
-1. Prepare a layered PSD with separate left/right legs, feet, hands, head, face, hair and clothing ownership.
-2. Run `python src\integrations\check_fullbody.py --psd <file.psd> --psd2live-root <path>`.
-3. Open the PSD in PSD2Live and use its full preset.
-4. Export `.cmo3` for inspection, then `.moc3`/`.vtube.json` for runtime.
-5. Validate hips, knees, ankles, soles, shoulders, wrists, sleeves and skirt/pants layers.
+### 5.3 Verification (mandatory before delivery)
 
-## Completion Contract
+```text
+powershell -File tests\smoke.ps1
+powershell -File tests\smoke.ps1 -Full -Psd <file.psd>
+```
 
-The installer is complete when:
+Smoke covers: python, deps, PSD2Live presence, Cubism presence + external API port, environment variables, package integrity. Exit code 0 = no FAIL (SKIP is acceptable). Log lands in `%DSH_LOG_DIR%` or `%TEMP%`.
 
-- `check_env.py --json` shows all required dependencies installed;
-- source imports in `src/rigkit` succeed;
+For model-level verification, always render to PNG and look at it:
+
+```text
+python scripts\psd2live_mcp.py render --out face.png --params '{"ParamMouthOpenY":1.0,"ParamEyeLOpen":0}'
+```
+
+A change that does not alter the rendered PNG did not happen. Confirm by hash.
+
+## 6. Completion contract
+
+Installation is complete when:
+
+- `check_env.py --json` reports all required dependencies present;
+- `src/rigkit` imports succeed;
 - `config/pipeline.json` has a valid `active_profile`;
 - `skill_manifest.json` validates;
-- no inference process was started by installation.
+- `tests/smoke.ps1` reports 0 FAIL;
+- no inference process was started by the installation itself.
 
-Read `SKILL.md` for operating instructions and `references/` for detailed Live2D workflows.
+A model delivery is complete when:
 
+- `smoke.ps1` still passes;
+- the exported `.moc3` was loaded (or at minimum rendered) and visually checked;
+- `model3.json` references resolve (`Moc`, `Textures`, `Physics`, `Motions`, `Expressions`);
+- a previous version remains on disk untouched.
+
+## 7. Known failure signatures
+
+Do not re-derive these; they are already diagnosed.
+
+| Symptom | Root cause | Where |
+| --- | --- | --- |
+| mouth never opens | layer named `嘴张开` was hidden / not named `张嘴` | `references/model-defects.md#1` |
+| mouth opens with spikes | the mouth art layer is tiny (≈14 px) or sits far from the mesh | `#2` |
+| eyes closed but white/blue sliver remains | eye-white + iris are visible at the closed keyform | `#3` |
+| mouth fully open at 20% input | VTS `OutputRangeUpper` = 2.1 | `#4` |
+| blink looks like a stutter | blink motion is linear + VTS eye range 1.9 | `#5` |
+| arms hidden behind the shirt | PSD draw order puts `Arm_L/R` under `Topwear_Body` | `#6` |
+| model loads but "parameters missing" | user opened the PSD through Cubism's import path instead of the `.cmo3` | `#7` |
+
+## 8. Safety gates
+
+- Reading the character art, calling a remote service, or starting long GPU work requires explicit user approval.
+- Every write to a model file is preceded by a backup; state the rollback command in the same reply.
+- Cubism MCP (`cubism-mcp`) requires Cubism Editor **5.4 alpha or newer** with `外部应用程序集成` enabled. On 5.3.x the port 22033 probe times out — that is expected, record it as BLOCKED rather than FAIL.
+- Never claim a rig is "verified" from logs alone. Render, look, then report.

@@ -3,12 +3,20 @@
   "display_name": "Lv2D-png-to-model",
   "internal_id": "lv2d-png-to-model",
   "slug": "lv2d-png-to-model",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "license": "Lv2D-png-to-model Non-Commercial License v1.0",
-  "description": "将单张 PNG/JPG 二次元立绘拆成可绑定的分层 PSD，检查帽子、衣领、头发、耳朵和脖子的遮挡顺序，并路由到 PSD2Live 或半身自动绑定流程。",
+  "description": "把单张 PNG/JPG 立绘或已分层 PSD 变成可在 VTube Studio 使用的 Live2D 模型：拆层、检查遮挡顺序、路由到 PSD2Live 或半身绑定、通过 MCP 修正绑定缺陷并用渲染图验收。",
   "entry": "AI_README.md",
   "skill_entry": "SKILL.md",
   "release_notes": "CHANGELOG.md",
+  "read_order": [
+    "AI_README.md",
+    "SKILL.md",
+    "workflows/skill-routing.md",
+    "workflows/psd2live-mcp.md",
+    "references/model-defects.md",
+    "references/psd2live-ops.md"
+  ],
   "inputs": [
     "png",
     "jpg",
@@ -42,9 +50,12 @@
     "install": "python install.py --yes",
     "optional_local_gpu": "python install.py --yes --with-local-gpu",
     "verify": "python install.py --verify-only --json",
+    "smoke": "powershell -ExecutionPolicy Bypass -File tests/smoke.ps1",
+    "smoke_full": "powershell -ExecutionPolicy Bypass -File tests/smoke.ps1 -Full -Psd <file.psd>",
     "read_first": [
       "AI_README.md",
-      "skill_manifest.json",
+      "SKILL.md",
+      "workflows/skill-routing.md",
       "config/pipeline.json"
     ]
   },
@@ -75,12 +86,22 @@
     "vision": [
       "onnxruntime"
     ],
+    "mcp": [
+      "mcp"
+    ],
     "system": [
       "ffmpeg",
       "PSD2Live",
       "Live2D Cubism Editor",
       "VTube Studio"
     ]
+  },
+  "capability_tiers": {
+    "L0": "read the PSD, report layers, sizes and occluders",
+    "L1": "key-form and draw-order edits through PSD2Live MCP (no Cubism needed)",
+    "L2": "full body rig via PSD2Live CLI/MCP, export moc3/cmo3, install into VTube Studio",
+    "L3": "Cubism Editor programmatic editing (requires Cubism 5.4+ integration API; 5.3.x reports SKIP)",
+    "L4": "half-body bespoke rig through the bundled rigkit builder"
   },
   "capabilities": [
     "illustration variant preparation",
@@ -89,11 +110,21 @@
     "tk_seethrough workflow generation with opt-in auto-fill and Original base layer",
     "PSD layer naming and front/back occlusion validation",
     "PSD2Live front/back depth-split routing",
+    "PSD2Live CLI batch conversion to moc3/cmo3",
+    "PSD2Live MCP programmatic editing: draw order, keyforms, deformers, render, export",
+    "defect diagnosis recipes for mouth, eyes, blink, arms, parameters",
+    "VTube Studio model installation and parameter-range tuning",
+    "rendered-image acceptance checks",
     "half-body rig generation and VTube Studio installation",
     "full-body PSD quality checklist and PSD2Live routing"
   ],
   "limitations": [
     "The bundled rigkit builder is fully validated for half-body work; full-body binding requires PSD2Live.",
+    "PSD2Live cannot repaint art. A 14 px mouth stays a 14 px mouth; fix the art or accept the artefact.",
+    "Layer names drive the binding. Hidden or misnamed mouth/eye layers silently produce a model without that motion.",
+    "Exporting through PSD2Live resets Idle/Blink to generated defaults; re-apply tuned motions afterwards.",
+    "VTube Studio rewrites <model>.vtube.json on exit, so parameter ranges must be edited while VTS is closed.",
+    "Cubism ExternalEdit tools need Cubism 5.4 alpha or newer; the alpha has been discontinued and time-locked, so 5.3.x cannot connect (port 22033 closed).",
     "CObL is trained for multi-object tabletop scenes and is not yet a validated anime occlusion-order judge.",
     "RevealLayer requires bounding boxes and a FLUX.1-dev environment; anime-part quality has not been validated.",
     "Qwen-Image-Layered has about 20.4B BF16 parameters and is not a default 8 GB runtime.",
@@ -104,8 +135,20 @@
   "scripts": {
     "occlusion_check": "python scripts/occlusion_psd_check.py <psd> --mode full --require-original --json",
     "make_tk_workflow": "python scripts/make_tk_workflow.py --input-name <image> --out <workflow.json>",
-    "occlusion_tests": "python -m unittest -v tests/test_occlusion_tools.py"
+    "occlusion_tests": "python -m unittest -v tests/test_occlusion_tools.py",
+    "psd2live_list": "python scripts/psd2live_mcp.py list",
+    "psd2live_inspect": "python scripts/psd2live_mcp.py inspect --scope objects --query Mouth",
+    "psd2live_draw_order": "python scripts/psd2live_mcp.py draw-order --target ArtMeshHandwearL:165 --target ArtMeshHandwearR:166",
+    "psd2live_keyform": "python scripts/psd2live_mcp.py keyform --target mesh:ArtMeshEyewhiteL --key ParamEyeLOpen=0 --scale 0.12",
+    "psd2live_render": "python scripts/psd2live_mcp.py render --out check.png --params ParamMouthOpenY=1.0",
+    "psd2live_export": "python scripts/psd2live_mcp.py export --out-dir out"
   },
+  "environment_facts": [
+    "check_env.py:175 writes a probe file inside the package root; under a restricted sandbox it spins at 100% CPU forever. Run it with unrestricted file access.",
+    "PyPI direct connections are reset on some networks; use https://pypi.tuna.tsinghua.edu.cn/simple.",
+    "Non-ASCII install paths break Windows argv for wrapped Python calls; install to an ASCII path.",
+    "PSD2Live MCP token lives in HKCU\\Software\\JavaSoft\\Prefs\\io\\github\\psd2live\\agent, value agent_mcp_bearer_token, strip every '/' (Java prefs encoding)."
+  ],
   "verified_external_projects": {
     "see_through": {
       "repo": "https://github.com/shitagaki-lab/see-through",
@@ -125,7 +168,9 @@
     "psd2live": {
       "repo": "https://github.com/tsunehimatoi/psd2live",
       "commit": "f70241ff0ba2c50a992540ab4238e25a869aa33e",
-      "license": "GPL-3.0 application; selected modules MIT"
+      "license": "GPL-3.0 application; selected modules MIT",
+      "verified_version": "3.6.7",
+      "verified_api": "MCP 2025-11-25, 28 tools, http://127.0.0.1:23871/mcp"
     },
     "cobl": {
       "repo": "https://github.com/aneeldamaraju/cobl",
@@ -145,4 +190,3 @@
     }
   }
 }
-

@@ -1,5 +1,75 @@
 # Changelog
 
+## 1.4.0 - 2026-11-15
+
+Runtime-proven release. Everything below was executed end to end on a real
+character (blue-hair hoodie, 765×1536 PSD) and verified by rendered images,
+not by reading code.
+
+### Added
+
+- `references/psd2live-ops.md` — PSD2Live 3.6.7 MCP contract: 28 tools, the
+  `request` / `op` / `workspace_call` wrapping rules, target id shapes
+  (`mesh:ArtMeshHandwearL`, `warp:DeformEyes`), request bodies for
+  `rig_edit_structure`, `keyform_apply`, `rig_deform`, the three mesh
+  operations and their real limits, state/concurrency rules, error lookup.
+- `references/model-defects.md` — nine defect signatures seen in practice
+  (model never opens its mouth, torn mouth edges, visible eye-white when
+  closed, "one pixel of input = fully open", stuttering blink, arms behind
+  the shirt, "parameters lost" on load, red vertical streak, broken large
+  head angles). Each entry has symptom, root cause, verification command and
+  the fix that actually worked, plus the attempts that did **not**.
+- `workflows/psd2live-mcp.md` — operational runbook: start the server, get
+  the real bearer token from the Java prefs registry (the value shown in the
+  GUI is a mask and returns 401), import → inspect → edit → render → export.
+- `workflows/skill-routing.md` — when to use this skill versus
+  `live2d-halfbody` or `live2d-pipeline`, and the single deciding question:
+  "do you already have a layered PSD?"
+- `scripts/psd2live_mcp.py` — dependency-light CLI over the MCP endpoint:
+  `list`, `inspect`, `import`, `draw-order`, `keyform`, `render`, `export`,
+  with token auto-discovery (argument → env → registry).
+- `tests/smoke.ps1` — executable acceptance test (S1–S7) printing
+  PASS/FAIL/SKIP, writing `smoke-<stamp>.json`, exiting non-zero only on
+  FAIL. Cubism without the 5.4+ integration API reports SKIP, not FAIL.
+- `README.en.md` — English counterpart of the human-facing README.
+- `SKILL.md` capability tiers L0–L4, so an agent can tell "doable with what
+  is installed" from "needs a tool that does not exist here".
+
+### Changed
+
+- `README.md` rewritten for humans: three entry points, 30-second start,
+  the VTube Studio "auto-configure / 15 default parameters" dialog explained,
+  five pitfalls that cost the most time, and an explicit "what this cannot do".
+- `AI_README.md` rewritten for agents: reading order, three verified
+  environment facts, dependency tiers, three execution paths, mandatory
+  render verification, and a two-part completion contract.
+- Layer naming is now documented as the single most important input: the
+  binding generator maps by name, so a hidden or misnamed `嘴张开` silently
+  produces a model that cannot open its mouth.
+
+### Fixed (documented as recipe, reproducible)
+
+- Mouth tearing: the open-mouth art was 14 px wide and got stretched into
+  two dark wedges. Cropping a properly drawn open mouth (29×21) to the mouth
+  ROI and naming it `mouth_open` removed the artefact entirely.
+- Closed-eye eye-white bleed: shrinking the eye-white / iris meshes to 0.12
+  on the closed keyform hides it. `keyform_apply` with
+  `channels.opacity` silently no-ops — use geometry or `rig_edit_structure`.
+- Arms hidden behind the shirt: draw order was 140/150/160
+  (Arm_R / Arm_L / Topwear_Body). Moving the arms to 165/166 fixed it without
+  touching the PSD.
+- "Parameters lost" after import is not a broken file: it is VTube Studio's
+  first-load auto-configure wizard.
+
+### Validation
+
+- `tests/smoke.ps1`: 7 PASS / 0 FAIL / 1 SKIP on the reference machine
+  (Cubism 5.3.02, no external API).
+- Full pipeline reproduced three times with byte-identical renders when
+  nothing changed, which is how the ineffective fixes were identified.
+- Published models v0.5 → v0.7; v0.7 has clean mouth deformation at
+  `ParamMouthOpenY` = 0.5 and 1.0.
+
 ## 1.1.0 - 2026-11-11
 
 ### Added

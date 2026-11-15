@@ -1,7 +1,13 @@
 interface:
   display_name: "Lv2D-png-to-model"
-  short_description: "立绘拆层、遮挡检查与 Live2D 绑定工作流"
-  default_prompt: "Use $lv2d-png-to-model to inspect this illustration, prepare occlusion-correct layered PSDs, and route the project to the right Live2D workflow without starting expensive inference without approval."
+  short_description: "立绘拆层、遮挡检查与 Live2D 绑定（含 PSD2Live MCP 修正与渲染验收）"
+  default_prompt: "Use $lv2d-png-to-model to turn this illustration or layered PSD into a working Live2D model: check the environment, validate layer names and occlusion order, route full-body work through PSD2Live, fix binding defects through the MCP endpoint, and prove every change with a rendered image before reporting done. Do not start long inference or upload art without approval."
 
 policy:
   allow_implicit_invocation: true
+
+notes:
+  - "Read AI_README.md first; it encodes the verified environment facts and the completion contract."
+  - "A binding is not done until a render of the changed state has been inspected."
+  - "Cubism Editor programmatic editing requires 5.4+; on 5.3.x report the external API as unavailable instead of retrying."
+  - "PSD2Live MCP bearer token must come from the Java prefs registry; the value shown in the GUI is a mask."
